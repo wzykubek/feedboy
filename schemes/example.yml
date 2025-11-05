@@ -1,0 +1,11 @@
+url: https://niebezpiecznik.pl
+title: Niebezpiecznik.pl
+description: "Example feed"
+selectors:
+  item: .post
+  item_title: .title h2 a
+  item_description: .entry p
+  # item_content:
+  item_url: .entry a
+  item_date: # TODO: Rewrites
+# date_format:
