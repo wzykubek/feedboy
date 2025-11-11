@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -43,8 +44,16 @@ func (p *Parser) MapTextToValue(selector string, value *string) {
 func (p *Parser) MapLinkToValue(selector string, value **feeds.Link) {
 	href, exists := p.doc.Find(selector).Attr("href")
 	if exists {
+		itemUrl, err := url.Parse(href)
+		if err != nil {
+			panic(err)
+		}
+		baseUrl, err := url.Parse(p.Scheme.Url)
+		if err != nil {
+			panic(err)
+		}
 		*value = &feeds.Link{
-			Href: href,
+			Href: baseUrl.ResolveReference(itemUrl).String(),
 		}
 	}
 }
