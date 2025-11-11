@@ -9,25 +9,8 @@ import (
 )
 
 type Server struct {
-	schemes map[string]*parser.Scheme
-	port    string
-}
-
-func NewServer(port string) *Server {
-	return &Server{
-		schemes: make(map[string]*parser.Scheme),
-		port:    port,
-	}
-}
-
-func (s *Server) AddScheme(schemeName string) error {
-	scheme, err := parser.NewScheme("schemes/" + schemeName + ".yml") // TODO: Safe paths
-	if err != nil {
-		return fmt.Errorf("failed to load scheme: %w", err)
-	}
-	s.schemes[schemeName] = scheme
-
-	return nil
+	Port    string
+	Schemes map[string]*parser.Scheme
 }
 
 func generateFeed(scheme *parser.Scheme) (string, error) {
@@ -44,12 +27,12 @@ func generateFeed(scheme *parser.Scheme) (string, error) {
 func (s *Server) feedHandler(w http.ResponseWriter, r *http.Request) {
 	schemeName := r.URL.Path[6:]
 
-	if s.schemes[schemeName] == nil {
+	if s.Schemes[schemeName] == nil {
 		http.NotFound(w, r)
 		return
 	}
 
-	feed, err := generateFeed(s.schemes[schemeName])
+	feed, err := generateFeed(s.Schemes[schemeName])
 	if err != nil {
 		http.NotFound(w, r)
 		return
@@ -61,8 +44,8 @@ func (s *Server) feedHandler(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) Start() {
 	http.HandleFunc("/feed/", s.feedHandler)
-	log.Printf("Server starting on port %s", s.port)
-	log.Printf("Configured feeds: %d", len(s.schemes))
+	log.Printf("Server starting on port %s", s.Port)
+	log.Printf("Configured feeds: %d", len(s.Schemes))
 
-	log.Fatal(http.ListenAndServe(":"+s.port, nil))
+	log.Fatal(http.ListenAndServe(":"+s.Port, nil))
 }
