@@ -4,13 +4,38 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"go.wzykubek.xyz/feedboy/pkg/parser"
 )
 
 type Server struct {
-	Port    string
-	Schemes map[string]*parser.Scheme
+	Port      string
+	SchemeDir string
+	schemes   map[string]*parser.Scheme
+}
+
+func (s *Server) LoadSchemes() error {
+	s.schemes = make(map[string]*parser.Scheme)
+
+	entries, err := os.ReadDir(s.SchemeDir)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		scheme, err := parser.NewScheme(filepath.Join(s.SchemeDir, entry.Name()))
+		if err != nil {
+			panic(err)
+		}
+		s.schemes[entry.Name()[:len(entry.Name())-4]] = scheme
+	}
+
+	return nil
 }
 
 func generateFeed(scheme *parser.Scheme) (string, error) {
@@ -27,12 +52,18 @@ func generateFeed(scheme *parser.Scheme) (string, error) {
 func (s *Server) feedHandler(w http.ResponseWriter, r *http.Request) {
 	schemeName := r.URL.Path[6:]
 
-	if s.Schemes[schemeName] == nil {
+	if s.schemes[schemeName] == nil {
 		http.NotFound(w, r)
 		return
 	}
 
-	feed, err := generateFeed(s.Schemes[schemeName])
+	err := s.LoadSchemes()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	feed, err := generateFeed(s.schemes[schemeName])
 	if err != nil {
 		http.NotFound(w, r)
 		return
@@ -45,7 +76,7 @@ func (s *Server) feedHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) Start() {
 	http.HandleFunc("/feed/", s.feedHandler)
 	log.Printf("Server starting on port %s", s.Port)
-	log.Printf("Configured feeds: %d", len(s.Schemes))
+	log.Printf("Configured feeds: %d", len(s.schemes))
 
 	log.Fatal(http.ListenAndServe(":"+s.Port, nil))
 }
