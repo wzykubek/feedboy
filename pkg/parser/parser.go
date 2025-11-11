@@ -52,12 +52,12 @@ func (p *Parser) MapLinkToValue(selector string, value **feeds.Link) {
 func (p *Parser) MapDateToValue(selector string, value *time.Time) {
 	dateStr := strings.TrimSpace(p.doc.Find(selector).Text())
 	if dateStr != "" {
-		date, err := time.Parse(time.RFC3339, dateStr)
+		date, err := time.Parse(p.Scheme.DateFormat, dateStr)
 		if err != nil {
 			panic(err)
-		} else {
-			*value = date
 		}
+
+		*value = date
 	}
 }
 
