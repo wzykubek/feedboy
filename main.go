@@ -1,18 +1,9 @@
 package main
 
 import (
-	"go.wzykubek.xyz/feedboy/pkg/server"
+	"go.wzykubek.xyz/feedboy/cmd"
 )
 
-var directory = "./schemes"
-
 func main() {
-	srv := server.Server{
-		Port:      "8080",
-		SchemeDir: directory,
-	}
-
-	srv.LoadSchemes()
-
-	srv.Start()
+	cmd.Execute()
 }
